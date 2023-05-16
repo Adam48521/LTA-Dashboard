@@ -4,6 +4,7 @@ Created on Sun Apr 23 22:42:22 2023
 
 @author: adaml
 """
+# %%
 import sys
 import datetime
 from selenium.webdriver.support.ui import Select
@@ -23,7 +24,7 @@ def data_download():
     # Chromedriver
     options = webdriver.ChromeOptions()
     chrome_options = Options()
-    chrome_options.add_argument("--headless")
+    chrome_options.add_argument('--headless')
     
     driver = webdriver.Chrome(ChromeDriverManager().install(),options=options)
     #driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
@@ -41,8 +42,7 @@ def data_download():
     
     #Extract dates and web value from link
     for opt in d.options:
-        #print(opt.text)
-        #print(opt.get_attribute('value'))
+        print(opt.text,opt.get_attribute('value')+"\n" )
         date.append(opt.text)
         date_value.append(opt.get_attribute('value'))
     
@@ -54,6 +54,7 @@ def data_download():
     doub=[]
     tourn=[]
     tourn_used=[]
+    #tot_pts=[]
     points=[]
     
     for i in date_value:
@@ -78,27 +79,44 @@ def data_download():
     #Append lists to dataframe
     df = pd.DataFrame(
         {'Date': date,
-         'Date_value': date_value,
          'Rank': rank,
          'Singles Points': sing,
          'Doubles Points': doub,
          'Tournaments': tourn,
-         'Tournaments used': tourn_used
+         'Tournaments used': tourn_used,
+         'Total Points':points
         })
-    print(df.head())
-    df.to_csv('data.csv')
+    
+    #Convert date format from object WW-YYY to datetime
+    df['Date'] = df['Date'] + "-1" #Start of the week
+    df["Date"] = pd.to_datetime(df["Date"],format='%U-%Y-%w')
+    df.sort_values(by='Date', ascending = True, inplace = True) #Sort for date being ascending
+
+    #Export data to csv
+    df.to_csv(r'C:\Users\alain\Documents\Python Scripts\LTA-Dashboard/data.csv')
     driver.close()
+
+    print('New data successfully downloaded')
     return(df)
 
-#Run data download function
+#Read existing data
+#df = pd.read_csv(r'C:\Users\alain\Documents\Python Scripts\LTA-Dashboard/data.csv')
+
+#Run Fresh Download
 df = data_download()
 
-####Date values come through mixed formats####
 
 
-#Ranking=df[['Date','Rank']]
-#Ranking.plot(x="Date",y="Rank")
 
+
+df = df.astype({"Rank": int, "Singles Points": int,"Doubles Points": int, "Tournaments": int, "Tournaments used": int, "Total Points": int})
+
+#print(df.dtypes)
+
+# %%
+Ranking=df[['Date','Rank']]
+Ranking.plot(x='Date',y='Rank')
+plt.show()
 
 toc = time.perf_counter()
 
